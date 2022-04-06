@@ -1,7 +1,7 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 const htmlTemplate = require('rollup-plugin-generate-html-template')
-const typescript = require('@rollup/plugin-typescript')
 
+import babel from '@rollup/plugin-babel'
 const image = require('@rollup/plugin-image')
 
 const serve = require('rollup-plugin-serve')
@@ -9,6 +9,7 @@ const livereload = require('rollup-plugin-livereload')
 
 const { terser } = require('rollup-plugin-terser')
 
+let extensions = ['.ts', '.tsx']
 export default args => {
   let prod = args['config-prod']
   return {
@@ -28,8 +29,8 @@ export default args => {
       clearScreen: false
     },
     plugins: [
-      nodeResolve(),
-      typescript(),
+      nodeResolve({ extensions, browser: true }),
+      babel({ extensions, babelHelpers: 'bundled' }),
       htmlTemplate({
         template: 'src/index.html',
         target: 'index.html'
