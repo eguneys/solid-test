@@ -20,7 +20,7 @@ export default args => {
       dir: 'dist',
       ...(prod ? {
         entryFileNames: '[name].min.js',
-        plugins: [terser({mangle: {properties: { keep_quoted: true } }})]
+        plugins: [terser()]
       } : {
         sourcemap: true
       })
