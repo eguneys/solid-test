@@ -1,6 +1,5 @@
 import { createSignal, createContext, useContext } from 'soli2d-js'
-import { Quad, Vec2 } from 'soli2d'
-
+import { Quad, Vec2, loop } from 'soli2d'
 
 const AppContext = createContext<AppContextValue>({})
 
@@ -31,17 +30,36 @@ const App = (_image, _root) => {
       _setRoot(_root)
 
 
-    let [s, setS] = createSignal(0)
-      setTimeout(() => {
+     loop((dt) => {
+       root()._update_world()
+       })
 
-          setS(7)
-          root()._update_world()
-          },1000)
-    return (<transform quad={Quad.make(image(), 0, 0, 100, 100)} size={Vec2.make(100, 100)} x={s()<5?100:200}/>)
+
+    return (<Game/>)
   }
 
   return () => (<AppProvider> <_App/> </AppProvider>)
 }
 
-
 export default App
+
+
+
+
+export const Game = () => {
+
+
+
+  
+  return (<>
+    <Tile x={10} y={100}/>
+    <Tile x={200} y={200}/>
+      </>)
+}
+
+
+export const Tile = (props) => {
+
+  let [image] = useApp()
+  return (<transform quad={Quad.make(image(), 0, 0, 128, 128)} size={Vec2.make(100, 100)} x={props.x} y={props.y}/>)
+}
