@@ -1,10 +1,11 @@
-import { on, createEffect, createSignal, createContext, useContext } from 'soli2d-js'
+import { For, on, createEffect, createSignal, createContext, useContext } from 'soli2d-js'
 import { Quad, Vec2, loop } from 'soli2d'
 import Input from './input'
-import { Mila as OMila } from './mila'
+import { tile_no, tile_no_row, Mila as OMila, Parabox as OParabox } from './mila'
 
 const colors = {
   sand2: [3, 1],
+  blue2: [6, 1],
   red2: [4, 2],
   red3: [4, 3]
 }
@@ -76,10 +77,17 @@ export const Game = () => {
     res += 0.01
     return res
   }
-  
+
+  let box = OParabox.make(1),
+      b2 = OParabox.make(2)
+
+  box.add(tile_no(4, 4), b2)
+
   return (<>
       <Background/>
-      <Mila/>
+      <Box box={box}>
+        <Mila/>
+      </Box>
     <transform pivot={Vec2.make(20, 20)} y={100} x={100} rotation={rotation()}>
       <StrokeRect color={colors.red2} x={0} y={0} w={20} h={20}/>
       <StrokeRect color={colors.red2} x={21} y={0} w={20} h={20}/>
@@ -88,11 +96,37 @@ export const Game = () => {
     </>)
 }
 
+let para_colors = [undefined, colors.red2, colors.blue2]
+export const Box = (props) => {
+  
+  let [hue, lum] = para_colors[props.box.type]
+  return (<transform pivot={Vec2.make(80, 80)} x={160} y={90}>
+    <Tile lum={lum} hue={hue} size={Vec2.make(160, 160)} x={0} y={0}/>
+
+    <For each={props.box.flat}>{([no, box]) =>
+      <>
+      <Tile lum={0} hue={0} size={Vec2.make(160, 160)} x={0} y={0}/>
+      <MilaBox box={box} x={tile_no_row(no)[0]} y={tile_no_row(no)[1]}/>
+      </>
+    }</For>
+ 
+    {props.children}
+    </transform>)
+}
+
+export const MilaBox = (props) => {
+
+  let [hue, lum] = para_colors[props.box.type]
+  return (<transform x={props.x} y={props.y}>
+      <Tile lum={lum} hue={hue} size={Vec2.make(16, 16)} x={0} y={0}/>
+    </transform>)
+}
+
 export const Mila = () => {
 
   let [{input, update}] = useApp()
 
-  let [mila, setMila] = createSignal(new OMila(), { equals: false })
+  let [mila, setMila] = createSignal(new OMila(8, 8), { equals: false })
 
   let [hue, lum] = colors.red3
 
@@ -126,19 +160,17 @@ export const Mila = () => {
     } 
 
     setMila(mila => {
-      mila.input(Vec2.make(i_x, i_y))
+      mila.input(i_x, i_y)
       return mila
     })
   }))
 
 
+  const x = () => { return mila().x }
+  const y = () => { return mila().y }
 
-  createEffect(() => {
-    //console.log(mila().theta.x)
-  })
-
-  return (<transform rotation={Math.PI*0.25} pivot={Vec2.make(0.5, 0.5)} x={50} y={50}>
-      <Tile lum={lum} hue={hue} pivot={0.5} size={Vec2.make(14, 14)} x={0} y={0}/>
+  return (<transform rotation={Math.PI*0.25} x={x()} y={y()}>
+      <Tile lum={lum} hue={hue} pivot={0.5} size={Vec2.make(10, 10)} x={0} y={0}/>
       </transform>)
 }
 
