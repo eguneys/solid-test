@@ -137,7 +137,7 @@ export const Mila = () => {
     //console.log(mila().theta.x)
   })
 
-  return (<transform rotation={Math.PI*0.25} pivot={Vec2.make(0.5, 0.5)} x={10} y={10}>
+  return (<transform rotation={Math.PI*0.25} pivot={Vec2.make(0.5, 0.5)} x={50} y={50}>
       <Tile lum={lum} hue={hue} pivot={0.5} size={Vec2.make(14, 14)} x={0} y={0}/>
       </transform>)
 }

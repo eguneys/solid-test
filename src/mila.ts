@@ -5,24 +5,15 @@ export type Angle = number
 export class Mila {
 
 
-  speed = new RigidVal(100, 0.9, 0, 0)
-  theta = new RigidVal(100, 0.93, 0, 0)
-
   input(input: Vec2) {
-    this.theta.force = input.angle
-    this.speed.force = input.length
   }
 
   update(dt: number, dt0: number) {
-
-    this.speed.update(dt, dt0)
-    this.theta.update(dt, dt0)
-
-    this.theta.force = 0
-    this.speed.force = 0
   }
 
 } 
+
+export class 
 
 export class RigidVal {
 
