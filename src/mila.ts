@@ -1,7 +1,9 @@
-import { Vec2 } from 'soli2d'
+import { Vec2 } from 'soli2d-js/web'
 import { ticks } from './shared'
 
-export type Paratype = 1 | 2
+import { color, hue, lum, colors } from './shared'
+
+export type Paratype = 1 | 2 | 3
 export type TileNumber = number
 
 export function tile_no(row: number, col: number) {
@@ -14,6 +16,10 @@ export function tile_no_row(tile_no: TileNumber) {
 
 export class Game {
 
+  get parent() {
+    return this.box.parent
+  }
+
   box: Parabox
 
   constructor(box: Parabox,
@@ -25,10 +31,15 @@ export class Game {
   input(x: number, y: number) {
     this.mila.input(x, y)
 
-    if (this.mila.x2 !== this.mila.x || 
-        this.mila.y2 !== this.mila.y) {
-      console.log(this.mila.y2, this.mila.y)
+    if (this.mila.has_reached) {
+      let dest = this.box.get(this.mila.tile)
+
+      if (dest) {
+        this.box = dest
+      }
+
     }
+
   }
 
 
@@ -38,23 +49,34 @@ export class Game {
 
 }
 
+let para_colors = [undefined, colors.red2, colors.blue2, colors.green2]
 export class Parabox {
 
   static make = (type: Paratype) => {
     return new Parabox(type)
   }
 
+  get color() {
+    return para_colors[this.type]
+  }
+
   get flat() {
     return [...this.data]
   }
 
+  parent?: Parabox
   data: Map<TileNumber, Parabox> = new Map()
 
   constructor(readonly type: Paratype) {}
 
 
   add(no: TileNumber, box: Parabox) {
+    box.parent = this
     this.data.set(no, box)
+  }
+
+  get(no: TileNumber) {
+    return this.data.get(no)
   }
 
 }
@@ -64,6 +86,14 @@ export class Mila {
 
   _x: TweenVal
   _y: TweenVal
+
+  get has_reached() {
+    return this._x.has_reached || this._y.has_reached
+  }
+
+  get tile() {
+    return tile_no(this.x, this.y)
+  }
 
   get x() {
     return this._x.value
@@ -131,6 +161,12 @@ export class TweenVal {
     return this.a * (1 - this.i) + this.b * this.i
   }
 
+  _i0: number
+
+  get has_reached() {
+    return this.i === 1 && this._i0 !== this.i
+  }
+
   constructor(readonly a: number,
               readonly b: number,
               readonly duration: number = ticks.sixth,
@@ -146,6 +182,7 @@ export class TweenVal {
 
 
   update(dt: number, dt0: number) {
+    this._i0 = this.i
     this._elapsed += dt
   }
 

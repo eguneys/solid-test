@@ -1,14 +1,10 @@
 import { Show, For, on, createEffect, createSignal, createContext, useContext } from 'soli2d-js'
-import { Quad, Vec2, loop } from 'soli2d'
+import { Quad, Vec2, loop } from 'soli2d-js/web'
 import Input from './input'
 import { tile_no, tile_no_row, Game as OGame, Mila as OMila, Parabox as OParabox } from './mila'
 
-const colors = {
-  sand2: [3, 1],
-  blue2: [6, 1],
-  red2: [4, 2],
-  red3: [4, 3]
-}
+import { color, hue, lum, colors } from './shared'
+
 
 const AppContext = createContext<AppContextValue>({})
 
@@ -52,11 +48,9 @@ const App = (_image, _root) => {
 
      createEffect(on(update, (dt, dt0) => {
         root()._update_world()
+        console.log(root()._flat.map(_ => _.name).join(';'))
+        //console.log(root()._flat.find(_ => _.name === 'milatransform').world.tx)
      }))
-
-    createEffect(() => {
-      console.log(root()._flat.map(_ => _.name))
-      })
 
     return (<Game/>)
   }
@@ -71,15 +65,23 @@ export default App
 
 export const Game = () => {
 
-  let box = OParabox.make(1),
+  let parent = OParabox.make(3),
+      box = OParabox.make(1),
       b2 = OParabox.make(2)
+  parent.add(tile_no(4, 4), box)
   box.add(tile_no(4, 4), b2)
   let _mila = new OMila(tile_no(0, 0))
   let _game = new OGame(box, _mila)
 
   let [game, setGame] = createSignal(_game, { equals: false })
 
-  let [{input, update}] = useApp()
+  let [{input, update, root }] = useApp()
+
+  // causes last item mila to render on top
+  createEffect(() => {
+    console.log(root()._flat.map(_ => [_.name, _.world.ty].join('')))
+    
+  })
 
   createEffect(on(update, ([dt, dt0]) => {
     setGame(game => {
@@ -119,57 +121,64 @@ export const Game = () => {
 
 
   return (<>
-      <Background/>
-      <transform pivot={Vec2.make(80, 80)} x={160} y={90}>
-        <Box box={game().box}/>
+      <transform name={"milaparent"} x={160} y={90}>
+        <Show when={game().parent}>
+          <ParentBox box={game().parent}/>
+        </Show>
         <Mila mila={game().mila}/>
       </transform>
     </>)
 }
 
-let para_colors = [undefined, colors.red2, colors.blue2]
+
+export const ParentBox = (props) => {
+  
+  return (<>
+      <transform pivot={Vec2.make(80, 80)} scale={Vec2.make(1.2, 1.2)}>
+      <Tile color={props.box.color} size={Vec2.make(160, 160)} x={0} y={0}/>
+      </transform>
+      <For each={props.box.flat}>{([no, box], i) =>
+        <For each={props.box.flat}>{(_, i) =>
+          <MilaBox name={'box' + i()} box={box} x={tile_no_row(no).x} y={tile_no_row(no).y} />  
+        }</For>
+      }</For>
+    </>)
+
+}
+
 export const Box = (props) => {
   
-  let [hue, lum] = para_colors[props.box.type]
   return (<>
-    <Tile name={"first"} lum={lum} hue={hue} size={Vec2.make(160, 160)} x={0} y={0}/>
-    <For each={props.box.flat}>{([no, box]) =>
-      <MilaBox box={box} x={tile_no_row(no).x} y={tile_no_row(no).y} />  
+    <Tile name={"first"} color={props.box.color} size={Vec2.make(160, 160)} x={0} y={0}/>
+    <For each={props.box.flat}>{([no, box], i) =>
+      <MilaBox name={'box' + i()} box={box} x={tile_no_row(no).x} y={tile_no_row(no).y} />  
     }</For>
     </>)
 }
 
 export const MilaBox = (props) => {
 
-  let [hue, lum] = para_colors[props.box.type]
-
   const x = () => { return props.x * 16 }
   const y = () => { return props.y * 16 }
 
-
-
   return (<transform x={x()} y={y()}>
-      <Tile lum={lum} hue={hue} size={Vec2.make(16, 16)} x={0} y={0}/>
+      <Tile name={props.name} color={props.box.color} size={Vec2.make(16, 16)} x={0} y={0}/>
     </transform>)
 }
 
 export const Mila = (props) => {
 
-
-  let [hue, lum] = colors.red3
-
   const x = () => { return props.mila.x * 16 }
   const y = () => { return props.mila.y * 16 }
 
-  return (<transform pivot={Vec2.make(5, 5)} rotation={Math.PI*0.25} x={x()+8} y={y()+8}>
-      <Tile lum={lum} hue={hue} size={Vec2.make(10, 10)} x={0} y={0}/>
+  return (<transform name={'milatransform'} pivot={Vec2.make(5, 5)} rotation={Math.PI*0.25} x={x()+8} y={y()+8}>
+      <Tile name={'mila'} color={colors.red3} size={Vec2.make(10, 10)} x={0} y={0}/>
       </transform>)
 }
 
 export const Background = () => {
-  let [hue, lum] = colors.sand2
   return (<>
-      <Tile lum={lum} hue={hue} size={Vec2.make(320, 180)} x={0} y={0}/>
+      <Tile color={colors.sand2} size={Vec2.make(320, 180)} x={0} y={0}/>
       </>)
 }
 
@@ -194,10 +203,8 @@ export const Tile = (props) => {
 
   const pivot = props.pivot || 0
 
-  const lum = () => props.lum * 2
-  const hue = () => props.hue * 2
-
-  return (<transform name={props.name} quad={Quad.make(image(), lum(), hue(), 1, 1)} 
+  return (<transform name={props.name} 
+      quad={Quad.make(image(), lum(props.color), hue(props.color), 1, 1)} 
       pivot={Vec2.make(pivot, pivot)}
       size={props.size} 
       x={Math.round(props.x)} y={Math.round(props.y)}/>)

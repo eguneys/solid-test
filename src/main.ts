@@ -1,6 +1,5 @@
 import sprites_png from '../assets/sprites.png'
-import { render } from 'soli2d-js/web'
-import { Soli2d } from 'soli2d'
+import { render, Soli2d } from 'soli2d-js/web'
 
 import App from './app2'
 
