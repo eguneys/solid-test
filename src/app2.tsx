@@ -134,7 +134,7 @@ export const Box = (props) => {
   return (<>
     <Tile name={"first"} lum={lum} hue={hue} size={Vec2.make(160, 160)} x={0} y={0}/>
     <For each={props.box.flat}>{([no, box]) =>
-      <Tile name={"one"} lum={0} hue={0} size={Vec2.make(160, 160)} x={0} y={0}/>
+      <MilaBox box={box} x={tile_no_row(no).x} y={tile_no_row(no).y} />  
     }</For>
     </>)
 }
@@ -142,7 +142,13 @@ export const Box = (props) => {
 export const MilaBox = (props) => {
 
   let [hue, lum] = para_colors[props.box.type]
-  return (<transform x={props.x} y={props.y}>
+
+  const x = () => { return props.x * 16 }
+  const y = () => { return props.y * 16 }
+
+
+
+  return (<transform x={x()} y={y()}>
       <Tile lum={lum} hue={hue} size={Vec2.make(16, 16)} x={0} y={0}/>
     </transform>)
 }
