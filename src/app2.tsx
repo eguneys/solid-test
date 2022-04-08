@@ -1,7 +1,7 @@
-import { For, on, createEffect, createSignal, createContext, useContext } from 'soli2d-js'
+import { Show, For, on, createEffect, createSignal, createContext, useContext } from 'soli2d-js'
 import { Quad, Vec2, loop } from 'soli2d'
 import Input from './input'
-import { tile_no, tile_no_row, Mila as OMila, Parabox as OParabox } from './mila'
+import { tile_no, tile_no_row, Game as OGame, Mila as OMila, Parabox as OParabox } from './mila'
 
 const colors = {
   sand2: [3, 1],
@@ -54,6 +54,9 @@ const App = (_image, _root) => {
         root()._update_world()
      }))
 
+    createEffect(() => {
+      console.log(root()._flat.map(_ => _.name))
+      })
 
     return (<Game/>)
   }
@@ -68,72 +71,20 @@ export default App
 
 export const Game = () => {
 
-
-  let [{input, update}] = useApp()
-
-  let res = 0
-  const rotation=() => {
-    update()
-    res += 0.01
-    return res
-  }
-
   let box = OParabox.make(1),
       b2 = OParabox.make(2)
-
   box.add(tile_no(4, 4), b2)
+  let _mila = new OMila(tile_no(0, 0))
+  let _game = new OGame(box, _mila)
 
-  return (<>
-      <Background/>
-      <Box box={box}>
-        <Mila/>
-      </Box>
-    <transform pivot={Vec2.make(20, 20)} y={100} x={100} rotation={rotation()}>
-      <StrokeRect color={colors.red2} x={0} y={0} w={20} h={20}/>
-      <StrokeRect color={colors.red2} x={21} y={0} w={20} h={20}/>
-      <StrokeRect color={colors.red2} x={0} y={21} w={20} h={20}/>
-    </transform>
-    </>)
-}
-
-let para_colors = [undefined, colors.red2, colors.blue2]
-export const Box = (props) => {
-  
-  let [hue, lum] = para_colors[props.box.type]
-  return (<transform pivot={Vec2.make(80, 80)} x={160} y={90}>
-    <Tile lum={lum} hue={hue} size={Vec2.make(160, 160)} x={0} y={0}/>
-
-    <For each={props.box.flat}>{([no, box]) =>
-      <>
-      <Tile lum={0} hue={0} size={Vec2.make(160, 160)} x={0} y={0}/>
-      <MilaBox box={box} x={tile_no_row(no)[0]} y={tile_no_row(no)[1]}/>
-      </>
-    }</For>
- 
-    {props.children}
-    </transform>)
-}
-
-export const MilaBox = (props) => {
-
-  let [hue, lum] = para_colors[props.box.type]
-  return (<transform x={props.x} y={props.y}>
-      <Tile lum={lum} hue={hue} size={Vec2.make(16, 16)} x={0} y={0}/>
-    </transform>)
-}
-
-export const Mila = () => {
+  let [game, setGame] = createSignal(_game, { equals: false })
 
   let [{input, update}] = useApp()
 
-  let [mila, setMila] = createSignal(new OMila(8, 8), { equals: false })
-
-  let [hue, lum] = colors.red3
-
   createEffect(on(update, ([dt, dt0]) => {
-    setMila(mila => {
-      mila.update(dt, dt0)
-      return mila
+    setGame(game => {
+      game.update(dt, dt0)
+      return game
     })
   }))
 
@@ -159,18 +110,53 @@ export const Mila = () => {
       i_x = 1
     } 
 
-    setMila(mila => {
-      mila.input(i_x, i_y)
-      return mila
+    setGame(game => {
+      game.input(i_x, i_y)
+      return game
     })
   }))
 
 
-  const x = () => { return mila().x }
-  const y = () => { return mila().y }
 
-  return (<transform rotation={Math.PI*0.25} x={x()} y={y()}>
-      <Tile lum={lum} hue={hue} pivot={0.5} size={Vec2.make(10, 10)} x={0} y={0}/>
+  return (<>
+      <Background/>
+      <transform pivot={Vec2.make(80, 80)} x={160} y={90}>
+        <Box box={game().box}/>
+        <Mila mila={game().mila}/>
+      </transform>
+    </>)
+}
+
+let para_colors = [undefined, colors.red2, colors.blue2]
+export const Box = (props) => {
+  
+  let [hue, lum] = para_colors[props.box.type]
+  return (<>
+    <Tile name={"first"} lum={lum} hue={hue} size={Vec2.make(160, 160)} x={0} y={0}/>
+    <For each={props.box.flat}>{([no, box]) =>
+      <Tile name={"one"} lum={0} hue={0} size={Vec2.make(160, 160)} x={0} y={0}/>
+    }</For>
+    </>)
+}
+
+export const MilaBox = (props) => {
+
+  let [hue, lum] = para_colors[props.box.type]
+  return (<transform x={props.x} y={props.y}>
+      <Tile lum={lum} hue={hue} size={Vec2.make(16, 16)} x={0} y={0}/>
+    </transform>)
+}
+
+export const Mila = (props) => {
+
+
+  let [hue, lum] = colors.red3
+
+  const x = () => { return props.mila.x * 16 }
+  const y = () => { return props.mila.y * 16 }
+
+  return (<transform pivot={Vec2.make(5, 5)} rotation={Math.PI*0.25} x={x()+8} y={y()+8}>
+      <Tile lum={lum} hue={hue} size={Vec2.make(10, 10)} x={0} y={0}/>
       </transform>)
 }
 
@@ -205,7 +191,7 @@ export const Tile = (props) => {
   const lum = () => props.lum * 2
   const hue = () => props.hue * 2
 
-  return (<transform quad={Quad.make(image(), lum(), hue(), 1, 1)} 
+  return (<transform name={props.name} quad={Quad.make(image(), lum(), hue(), 1, 1)} 
       pivot={Vec2.make(pivot, pivot)}
       size={props.size} 
       x={Math.round(props.x)} y={Math.round(props.y)}/>)

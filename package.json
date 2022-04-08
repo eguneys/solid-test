@@ -7,7 +7,8 @@
     "clean": "rm -rf dist && rm -f dist.zip",
     "dev": "yarn -s clean && rollup --config --watch",
     "prod": "yarn -s clean && rollup --config --config-prod",
-    "dist": "yarn prod && zip -r dist.zip -j dist -9 && echo `ls -lh dist.zip | cut -f5 -d ' '` bytes."
+    "zip": "zip -r dist.zip -j dist -9 && echo `ls -lh dist.zip | cut -f5 -d ' '` bytes.",
+    "dist": "yarn prod && roadroller dist/main.min.js -o dist/main.min.js && yarn zip"
   },
   "devDependencies": {
     "@babel/core": "^7.17.8",
@@ -18,6 +19,7 @@
     "@rollup/plugin-typescript": "^8.3.0",
     "babel-plugin-tsconfig-paths": "^1.0.2",
     "babel-preset-solid": "^1.3.13",
+    "roadroller": "^2.1.0",
     "rollup": "^2.67.0",
     "rollup-plugin-generate-html-template": "^1.7.0",
     "rollup-plugin-livereload": "^2.0.5",

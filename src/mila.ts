@@ -9,9 +9,34 @@ export function tile_no(row: number, col: number) {
 }
 
 export function tile_no_row(tile_no: TileNumber) {
-  return [Math.floor(tile_no / 16), tile_no % 16]
+  return Vec2.make(Math.floor(tile_no / 16), tile_no % 16)
 }
 
+export class Game {
+
+  box: Parabox
+
+  constructor(box: Parabox,
+              readonly mila: Mila) {
+                this.box = box
+              }
+
+
+  input(x: number, y: number) {
+    this.mila.input(x, y)
+
+    if (this.mila.x2 !== this.mila.x || 
+        this.mila.y2 !== this.mila.y) {
+      console.log(this.mila.y2, this.mila.y)
+    }
+  }
+
+
+  update(dt: number, dt0: number) {
+    this.mila.update(dt, dt0)
+  }
+
+}
 
 export class Parabox {
 
@@ -48,7 +73,17 @@ export class Mila {
     return this._y.value
   }
 
-  constructor(x: number, y: number) {
+
+  get x2() {
+    return this._x.b
+  }
+
+  get y2() {
+    return this._y.b
+  }
+
+  constructor(tile_no: TileNumber) {
+    let { x, y } = tile_no_row(tile_no)
     this._x = new TweenVal(x, x, ticks.thirds, TweenVal.quad_out)
     this._y = new TweenVal(y, y, ticks.thirds, TweenVal.quad_out)
   }
@@ -61,8 +96,8 @@ export class Mila {
       return
     }
 
-    this._x = this._x.new_b(this.x + x * 16)
-    this._y = this._y.new_b(this.y + y * 16)
+    this._x = this._x.new_b(this.x + x)
+    this._y = this._y.new_b(this.y + y)
   }
 
   update(dt: number, dt0: number) {
