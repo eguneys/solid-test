@@ -1,7 +1,7 @@
-import { Show, For, on, createEffect, createSignal, createContext, useContext } from 'soli2d-js'
+import { Show, For, on, createMemo, createEffect, createSignal, createContext, useContext } from 'soli2d-js'
 import { Quad, Vec2, loop } from 'soli2d-js/web'
 import Input from './input'
-import { tile_no, tile_no_row, Game as OGame, Mila as OMila, Parabox as OParabox } from './mila'
+import { tile_no, tile_no_row, Game as OGame, Parabox as OParabox } from './mila'
 
 import { color, hue, lum, colors } from './shared'
 
@@ -48,7 +48,6 @@ const App = (_image, _root) => {
 
      createEffect(on(update, (dt, dt0) => {
         root()._update_world()
-        console.log(root()._flat.map(_ => _.name).join(';'))
         //console.log(root()._flat.find(_ => _.name === 'milatransform').world.tx)
      }))
 
@@ -70,8 +69,9 @@ export const Game = () => {
       b2 = OParabox.make(2)
   parent.add(tile_no(4, 4), box)
   box.add(tile_no(4, 4), b2)
-  let _mila = new OMila(tile_no(0, 0))
-  let _game = new OGame(box, _mila)
+  let _mila = OParabox.make(1)
+  parent.add(tile_no(0, 0), _mila)
+  let _game = new OGame(_mila)
 
   let [game, setGame] = createSignal(_game, { equals: false })
 
@@ -79,8 +79,8 @@ export const Game = () => {
 
   // causes last item mila to render on top
   createEffect(() => {
-    console.log(root()._flat.map(_ => [_.name, _.world.ty].join('')))
-    
+      game()
+      //console.log(root()._flat.map(_ => [_.name, _.world.ty].join('')))
   })
 
   createEffect(on(update, ([dt, dt0]) => {
@@ -119,11 +119,12 @@ export const Game = () => {
   }))
 
 
+  const gameParent = createMemo(() => game().parent)
 
   return (<>
       <transform name={"milaparent"} x={160} y={90}>
-        <Show when={game().parent}>
-          <ParentBox box={game().parent}/>
+        <Show when={gameParent()}>
+          <ParentBox box={gameParent()}/>
         </Show>
         <Mila mila={game().mila}/>
       </transform>
@@ -134,22 +135,20 @@ export const Game = () => {
 export const ParentBox = (props) => {
   
   return (<>
-      <transform pivot={Vec2.make(80, 80)} scale={Vec2.make(1.2, 1.2)}>
+      <transform pivot={Vec2.make(80, 80)} scale={Vec2.make(2, 2)}>
       <Tile color={props.box.color} size={Vec2.make(160, 160)} x={0} y={0}/>
       </transform>
       <For each={props.box.flat}>{([no, box], i) =>
-        <For each={props.box.flat}>{(_, i) =>
-          <MilaBox name={'box' + i()} box={box} x={tile_no_row(no).x} y={tile_no_row(no).y} />  
-        }</For>
+         <Box box={box}/>
       }</For>
     </>)
 
 }
 
 export const Box = (props) => {
-  
+
   return (<>
-    <Tile name={"first"} color={props.box.color} size={Vec2.make(160, 160)} x={0} y={0}/>
+    <Tile name={props.box.color} color={props.box.color} size={Vec2.make(160, 160)} x={0} y={0}/>
     <For each={props.box.flat}>{([no, box], i) =>
       <MilaBox name={'box' + i()} box={box} x={tile_no_row(no).x} y={tile_no_row(no).y} />  
     }</For>

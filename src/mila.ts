@@ -16,27 +16,21 @@ export function tile_no_row(tile_no: TileNumber) {
 
 export class Game {
 
-  get parent() {
-    return this.box.parent
+
+  get parent2() {
+    return this.parent.parent
   }
 
-  box: Parabox
+  get parent() {
+    return this.mila.parent
+  }
 
-  constructor(box: Parabox,
-              readonly mila: Mila) {
-                this.box = box
-              }
-
+  constructor(readonly mila: Parabox) {}
 
   input(x: number, y: number) {
-    this.mila.input(x, y)
+    this.mila.push(x, y)
 
     if (this.mila.has_reached) {
-      let dest = this.box.get(this.mila.tile)
-
-      if (dest) {
-        this.box = dest
-      }
 
     }
 
@@ -55,34 +49,6 @@ export class Parabox {
   static make = (type: Paratype) => {
     return new Parabox(type)
   }
-
-  get color() {
-    return para_colors[this.type]
-  }
-
-  get flat() {
-    return [...this.data]
-  }
-
-  parent?: Parabox
-  data: Map<TileNumber, Parabox> = new Map()
-
-  constructor(readonly type: Paratype) {}
-
-
-  add(no: TileNumber, box: Parabox) {
-    box.parent = this
-    this.data.set(no, box)
-  }
-
-  get(no: TileNumber) {
-    return this.data.get(no)
-  }
-
-}
-
-export class Mila {
-
 
   _x: TweenVal
   _y: TweenVal
@@ -112,13 +78,31 @@ export class Mila {
     return this._y.b
   }
 
-  constructor(tile_no: TileNumber) {
+
+  get color() {
+    return para_colors[this.type]
+  }
+
+  _flat: Array<[TileNumber, Parabox]> | undefined
+
+  get flat() {
+    if (!this._flat) {
+      this._flat = [...this._data]
+    }
+    return this._flat
+  }
+
+
+  parent?: Parabox
+  _data: Map<TileNumber, Parabox> = new Map()
+
+  constructor(readonly type: Paratype) {
     let { x, y } = tile_no_row(tile_no)
     this._x = new TweenVal(x, x, ticks.thirds, TweenVal.quad_out)
     this._y = new TweenVal(y, y, ticks.thirds, TweenVal.quad_out)
   }
 
-  input(x: number, y: number) {
+  push(x: number, y: number) {
     if (x === 0 && y === 0) {
       return
     }
@@ -135,7 +119,17 @@ export class Mila {
     this._y.update(dt, dt0)
   }
 
-} 
+  add(no: TileNumber, box: Parabox) {
+    box.parent = this
+    this._data.set(no, box)
+    this._flat = undefined
+  }
+
+  get(no: TileNumber) {
+    return this._data.get(no)
+  }
+
+}
 
 export class TweenVal {
 
