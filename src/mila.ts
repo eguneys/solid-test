@@ -57,8 +57,20 @@ export class Parabox {
     return this._x.has_reached || this._y.has_reached
   }
 
+  get tile0() {
+    return tile_no(this.x0, this.y0)
+  }
+
   get tile() {
     return tile_no(this.x, this.y)
+  }
+
+  get x0() {
+    return this._x.a
+  }
+
+  get y0() {
+    return this._y.a
   }
 
   get x() {
@@ -96,10 +108,12 @@ export class Parabox {
   parent?: Parabox
   _data: Map<TileNumber, Parabox> = new Map()
 
-  constructor(readonly type: Paratype) {
+  constructor(tile_no: TileNumber, readonly type: Paratype, parent?: Parabox) {
     let { x, y } = tile_no_row(tile_no)
     this._x = new TweenVal(x, x, ticks.thirds, TweenVal.quad_out)
     this._y = new TweenVal(y, y, ticks.thirds, TweenVal.quad_out)
+
+    this.parent = parent
   }
 
   push(x: number, y: number) {
@@ -117,12 +131,26 @@ export class Parabox {
   update(dt: number, dt0: number) {
     this._x.update(dt, dt0)
     this._y.update(dt, dt0)
+
+
+    if (this.has_reached) {
+     this.parent.move(this.tile0, this.tile)
+    }
   }
 
-  add(no: TileNumber, box: Parabox) {
-    box.parent = this
+  move(orig: TileNumber, dest: TileNumber) {
+    let tmp = this._data.get(orig)
+    this._data.delete(orig)
+    this._data.set(dest, tmp)
+    this._flat = undefined
+    return tmp
+  }
+
+  add(no: TileNumber, type: Paratype) {
+    let box = new Parabox(no, type, this)
     this._data.set(no, box)
     this._flat = undefined
+    return box
   }
 
   get(no: TileNumber) {

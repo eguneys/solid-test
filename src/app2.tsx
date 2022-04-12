@@ -1,9 +1,9 @@
 import { Show, For, on, createMemo, createEffect, createSignal, createContext, useContext } from 'soli2d-js'
 import { Quad, Vec2, loop } from 'soli2d-js/web'
 import Input from './input'
-import { tile_no, tile_no_row, Game as OGame, Parabox as OParabox } from './mila'
 
 import { color, hue, lum, colors } from './shared'
+import { Parabox as OParabox } from './gbox'
 
 
 const AppContext = createContext<AppContextValue>({})
@@ -64,30 +64,26 @@ export default App
 
 export const Game = () => {
 
-  let parent = OParabox.make(3),
-      box = OParabox.make(1),
-      b2 = OParabox.make(2)
-  parent.add(tile_no(4, 4), box)
-  box.add(tile_no(4, 4), b2)
-  let _mila = OParabox.make(1)
-  parent.add(tile_no(0, 0), _mila)
-  let _game = new OGame(_mila)
 
-  let [game, setGame] = createSignal(_game, { equals: false })
+  let base = new OParabox(0, 0, colors.green2),
+      box = new OParabox(0, 0, colors.sand2),
+      b2 = new OParabox(0, 0, colors.blue2),
+      mila = new OParabox(0, 1, colors.red2)
+
+   base.setAdd(box)
+   box.setAdd(b2)
+   box.setAdd(mila)
+
 
   let [{input, update, root }] = useApp()
 
   // causes last item mila to render on top
   createEffect(() => {
-      game()
-      //console.log(root()._flat.map(_ => [_.name, _.world.ty].join('')))
+      console.log(root()._flat.map(_ => [_.name, _.x].join('')))
   })
 
   createEffect(on(update, ([dt, dt0]) => {
-    setGame(game => {
-      game.update(dt, dt0)
-      return game
-    })
+    base.setUpdate(dt, dt0)
   }))
 
   createEffect(on(input, (input) => {
@@ -112,75 +108,24 @@ export const Game = () => {
       i_x = 1
     } 
 
-    setGame(game => {
-      game.input(i_x, i_y)
-      return game
-    })
+      mila.setPush(i_x, i_y)
   }))
 
-
-  const gameParent = createMemo(() => game().parent)
-
   return (<>
-      <transform name={"milaparent"} x={160} y={90}>
-        <Show when={gameParent()}>
-          <ParentBox box={gameParent()}/>
-        </Show>
-        <Mila mila={game().mila}/>
-      </transform>
+     <Box x={0} y={0} box={base} zoom={1600}/>
     </>)
-}
-
-
-export const ParentBox = (props) => {
-  
-  return (<>
-      <transform pivot={Vec2.make(80, 80)} scale={Vec2.make(2, 2)}>
-      <Tile color={props.box.color} size={Vec2.make(160, 160)} x={0} y={0}/>
-      </transform>
-      <For each={props.box.flat}>{([no, box], i) =>
-         <Box box={box}/>
-      }</For>
-    </>)
-
 }
 
 export const Box = (props) => {
-
   return (<>
-    <Tile name={props.box.color} color={props.box.color} size={Vec2.make(160, 160)} x={0} y={0}/>
-    <For each={props.box.flat}>{([no, box], i) =>
-      <MilaBox name={'box' + i()} box={box} x={tile_no_row(no).x} y={tile_no_row(no).y} />  
-    }</For>
-    </>)
+      <transform name={props.zoom + 'wrap'} scale={Vec2.make(props.zoom, props.zoom)}>
+        <Tile name={props.zoom + 'bg'} color={props.box.color} size={Vec2.make(1, 1)} x={props.x} y={props.y} />
+      </transform>
+      <For each={props.box.tiles}>{ (box, i) =>
+        <Box box={box} x={box.x} y={box.y} zoom={props.zoom / 10}/>
+      }</For>
+   </>)
 }
-
-export const MilaBox = (props) => {
-
-  const x = () => { return props.x * 16 }
-  const y = () => { return props.y * 16 }
-
-  return (<transform x={x()} y={y()}>
-      <Tile name={props.name} color={props.box.color} size={Vec2.make(16, 16)} x={0} y={0}/>
-    </transform>)
-}
-
-export const Mila = (props) => {
-
-  const x = () => { return props.mila.x * 16 }
-  const y = () => { return props.mila.y * 16 }
-
-  return (<transform name={'milatransform'} pivot={Vec2.make(5, 5)} rotation={Math.PI*0.25} x={x()+8} y={y()+8}>
-      <Tile name={'mila'} color={colors.red3} size={Vec2.make(10, 10)} x={0} y={0}/>
-      </transform>)
-}
-
-export const Background = () => {
-  return (<>
-      <Tile color={colors.sand2} size={Vec2.make(320, 180)} x={0} y={0}/>
-      </>)
-}
-
 
 export const StrokeRect = (props) => {
 
@@ -206,6 +151,6 @@ export const Tile = (props) => {
       quad={Quad.make(image(), lum(props.color), hue(props.color), 1, 1)} 
       pivot={Vec2.make(pivot, pivot)}
       size={props.size} 
-      x={Math.round(props.x)} y={Math.round(props.y)}/>)
+      x={props.x} y={props.y}/>)
 }
 
