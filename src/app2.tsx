@@ -13,8 +13,9 @@ const AppProvider = (props) => {
   const [root, _setRoot] = createSignal()
   const [update, setUpdate] = createSignal([16, 16])
   const [input, setInput] = createSignal(new Input().init(), { equals: false })
+  const [render, setRender] = createSignal(undefined, { equals: false })
 
-  let store = [{image, root, update, input}, {
+  let store = [{image, root, update, render, input}, {
     _setImage,
       _setRoot
   }]
@@ -25,6 +26,7 @@ const AppProvider = (props) => {
       input.update(dt, dt0)
       return input
     })
+    setRender()
   })
 
   return (
@@ -36,19 +38,22 @@ const AppProvider = (props) => {
 
 export const useApp = () => useContext(AppContext)
 
-const App = (_image, _root) => {
+const App = (_render, _image, _root) => {
 
   let _App = () => {
 
-    const [{image, root, update}, { _setImage, _setRoot }] = useApp()
+    const [{image, root, update, render}, { _setImage, _setRoot }] = useApp()
 
       _setImage(_image)
       _setRoot(_root)
 
+     createEffect(on(render, () => {
+       _render()
+       }))
 
      createEffect(on(update, (dt, dt0) => {
         root()._update_world()
-        //console.log(root()._flat.map(_ => _.name))
+       // console.log(root()._flat.map(_ => _.name))
      }))
 
     return (<Game/>)
@@ -80,7 +85,7 @@ export const Game = () => {
 
   // causes last item mila to render on top
   createEffect(() => {
-      console.log(root()._flat.map(_ => [_.name, _.x].join('')))
+    //  console.log(root()._flat.map(_ => [_.name, _.x].join('')))
   })
 
   createEffect(on(update, ([dt, dt0]) => {
@@ -112,13 +117,19 @@ export const Game = () => {
       mila.setPush(i_x, i_y)
   }))
 
-  createEffect(() => {
-console.log(mila.parent)
-      })
+let parent_in_out = () => mila.transition && (mila.parent_in || mila.parent_out)
 
-  return (<transform x={-mila.parent.x * 160 +80} y={-mila.parent.y * 160 + 10 }>
-      <Box box={mila.parent.parent} zoom={1600}/>
-      </transform>)
+  return (<>
+      <Show when={parent_in_out()} fallback={
+        <transform name={'out'} x={-mila.parent.x * 160 +80} y={-mila.parent.y * 160 + 10 }>
+          <Box box={mila.parent.parent} zoom={1600}/>
+        </transform>
+      }>
+        <transform name={'out'} x={-mila.parent.x * 160 +80} y={-mila.parent.y * 160 + 10 }>
+          <Box box={mila.parent.parent} zoom={1600}/>
+        </transform>
+      </Show>
+    </>)
 
 
 }

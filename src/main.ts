@@ -15,8 +15,8 @@ function load_image(path: string): Promise<HTMLImageElement> {
 export default function app(element: HTMLElement) {
 
   load_image(sprites_png).then(image => {
-    let root = Soli2d(element, image, 320, 180)
-    render(App(image, root), root)
+    let [_render, root] = Soli2d(element, image, 320, 180)
+    render(App(_render, image, root), root)
   })
 
 }
