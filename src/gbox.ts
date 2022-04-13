@@ -1,4 +1,4 @@
-import { createSignal } from 'soli2d-js'
+import { createSignal, batch } from 'soli2d-js'
 import { ticks } from './shared'
 
 export function owrite(signal, fn) {
@@ -68,10 +68,43 @@ export class Parabox {
     if (this.xi < 1 || this.yi < 1) {
       return
     }
+
+    let tile = this.parent.tile(this.x + ix,
+                                this.y + iy)
+    
+    if (tile) {
+      this.parent.setRemove(this)
+      tile.setAdd(this)
+
+      let new_x = ix < 0 ? 10 : 
+        ix > 0 ? 0 : 
+        this.x
+      let new_y = iy < 0 ? 10 :
+        iy > 0 ? 0 :
+        this.y
+
+      this._x.setAB(new_x, new_x + ix)
+      this._y.setAB(new_y, new_y + iy)
+      return
+    }
+
+    if (this.x + ix >= 10 | this.y + iy >= 10) {
+      let parent = this.parent
+      this.parent.setRemove(this)
+      parent.parent.setAdd(this)
+      this._x.setAB(parent.x, parent.x + ix)
+      this._y.setAB(parent.y, parent.y + iy)
+      return
+    }
+
     this._x.setB(this.x + ix)
     this._y.setB(this.y + iy)
+
   }
 
+  tile(x: number, y: number) {
+    return this.tiles.find(_ => _.x === x && _.y === y)
+  }
 
   setAdd(parabox: Parabox) {
     write(this._tiles, _ => _.push(parabox))
@@ -121,6 +154,12 @@ export class Tween {
 
   setUpdate(dt: number, dt0: number) {
     owrite(this._elapsed, _ => _ + dt)
+  }
+
+  setAB(_a: number, _b: number) {
+    owrite(this._a, _a)
+    owrite(this._b, _b)
+    owrite(this._elapsed, 0)
   }
 
   setB(_b: number) {

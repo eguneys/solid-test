@@ -48,7 +48,7 @@ const App = (_image, _root) => {
 
      createEffect(on(update, (dt, dt0) => {
         root()._update_world()
-        //console.log(root()._flat.find(_ => _.name === 'milatransform').world.tx)
+        //console.log(root()._flat.map(_ => _.name))
      }))
 
     return (<Game/>)
@@ -65,15 +65,16 @@ export default App
 export const Game = () => {
 
 
-  let base = new OParabox(0, 0, colors.green2),
-      box = new OParabox(0, 0, colors.sand2),
-      b2 = new OParabox(0, 0, colors.blue2),
+  let base = new OParabox(1, 1, colors.red3),
+      base_child = new OParabox(1, 1, colors.green2),
+      box = new OParabox(1, 0, colors.sand2),
+      b2 = new OParabox(1, 1, colors.blue2),
       mila = new OParabox(0, 1, colors.red2)
 
-   base.setAdd(box)
+   base.setAdd(base_child)
+   base_child.setAdd(box)
    box.setAdd(b2)
    box.setAdd(mila)
-
 
   let [{input, update, root }] = useApp()
 
@@ -111,20 +112,29 @@ export const Game = () => {
       mila.setPush(i_x, i_y)
   }))
 
-  return (<>
-     <Box x={0} y={0} box={base} zoom={1600}/>
-    </>)
+  createEffect(() => {
+console.log(mila.parent)
+      })
+
+  return (<transform x={-mila.parent.x * 160 +80} y={-mila.parent.y * 160 + 10 }>
+      <Box box={mila.parent.parent} zoom={1600}/>
+      </transform>)
+
+
 }
 
 export const Box = (props) => {
+
   return (<>
-      <transform name={props.zoom + 'wrap'} scale={Vec2.make(props.zoom, props.zoom)}>
-        <Tile name={props.zoom + 'bg'} color={props.box.color} size={Vec2.make(1, 1)} x={props.x} y={props.y} />
+      <transform size={Vec2.make(props.zoom, props.zoom)}>
+        <Tile color={props.box.color} />
       </transform>
-      <For each={props.box.tiles}>{ (box, i) =>
-        <Box box={box} x={box.x} y={box.y} zoom={props.zoom / 10}/>
+      <For each={props.box.tiles}>{ box =>
+        <transform x={box.x*props.zoom/10} y={box.y * props.zoom/10}>
+          <Box box={box} zoom={props.zoom/10}/> 
+        </transform>
       }</For>
-   </>)
+      </>)
 }
 
 export const StrokeRect = (props) => {
