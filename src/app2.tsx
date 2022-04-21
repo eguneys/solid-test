@@ -42,19 +42,15 @@ const App = (_render, _image, _root) => {
 
   let _App = () => {
 
-    const [{image, root, update, render}, { _setImage, _setRoot }] = useApp()
+    const [{image, root, update, render, input}, { _setImage, _setRoot }] = useApp()
 
       _setImage(_image)
       _setRoot(_root)
 
      createEffect(on(render, () => {
+        root()._update_world()
        _render()
        }))
-
-     createEffect(on(update, (dt, dt0) => {
-        root()._update_world()
-       // console.log(root()._flat.map(_ => _.name))
-     }))
 
     return (<Game/>)
   }
@@ -85,7 +81,7 @@ export const Game = () => {
 
   // causes last item mila to render on top
   createEffect(() => {
-    //  console.log(root()._flat.map(_ => [_.name, _.x].join('')))
+    //console.log(root()._flat.map(_ => [_.name, _.x].join('')))
   })
 
   createEffect(on(update, ([dt, dt0]) => {
@@ -120,8 +116,8 @@ export const Game = () => {
 let parent_in_out = () => mila.transition && (mila.parent_in || mila.parent_out)
 
   return (<>
-      <Show when={parent_in_out()} fallback={
-        <transform name={'out'} x={-mila.parent.x * 160 +80} y={-mila.parent.y * 160 + 10 }>
+      <Show when={!parent_in_out()} fallback={
+        <transform name={'in'} x={-mila.parent.x * 160 +80} y={-mila.parent.y * 160 + 10 }>
           <Box box={mila.parent.parent} zoom={1600}/>
         </transform>
       }>
@@ -135,14 +131,13 @@ let parent_in_out = () => mila.transition && (mila.parent_in || mila.parent_out)
 }
 
 export const Box = (props) => {
-
   return (<>
       <transform size={Vec2.make(props.zoom, props.zoom)}>
         <Tile color={props.box.color} />
       </transform>
       <For each={props.box.tiles}>{ box =>
         <transform x={box.x*props.zoom/10} y={box.y * props.zoom/10}>
-          <Box box={box} zoom={props.zoom/10}/> 
+          <Box box={box} zoom={props.zoom/10}/>
         </transform>
       }</For>
       </>)

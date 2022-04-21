@@ -173,6 +173,8 @@ export class Tween {
 
   get value() { return  read(this._a) * (1 - this.i) + read(this._b) * this.i }
 
+  get a() { return read(this._a) }
+
   setUpdate(dt: number, dt0: number) {
     owrite(this._elapsed, _ => _ + dt)
   }
